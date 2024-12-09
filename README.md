@@ -22,7 +22,7 @@ The nitty gritty details of this involve how `SIGTERM` is sent by the kube sched
 
 Docker uses `SIGTERM` to shutdown containers, a big reason why [dumb-init](https://github.com/Yelp/dumb-init) is so widely used across the indstury. As an example, you can build the `go-server` Dockerfile, run it, then run `curl` it locally. While processing this request, stop the container with `docker stop` and you'll see the `SIGTERM` handler was called, causing the client request to fail mid-way through.
 
-![docker-sigterm-1](https://raw.githubusercontent.com/hrmcardle0/k8s-traffic-testing/refs/heads/main/images/docker-sigterm-logs1.png)
+![docker-sigterm-1](https://raw.githubusercontent.com/hrmcardle0/k8s-traffic-testing/refs/heads/main/images/docker-sigterm-logs.png)
 
 ## Kubernetes
 
