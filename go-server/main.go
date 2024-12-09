@@ -20,7 +20,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// Define the server port
-	port := "8080"
+	port := "80"
 
 	// Create a new server instance
 	server := &http.Server{

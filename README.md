@@ -16,23 +16,40 @@ Our client pod will be running `curl` to hit the endpoint every 1/10th of a seco
 
 ## SIGTERM
 
-The nitty gritty details of this involve how `SIGTERM` is sent by the kube scheduler. There is a good write-up about this behavior [here](https://learnk8s.io/graceful-shutdown). 
+The nitty gritty details of this involve how `SIGTERM` is sent by the kube scheduler. 
 
-## Docker
+### Docker
 
 Docker uses `SIGTERM` to shutdown containers, a big reason why [dumb-init](https://github.com/Yelp/dumb-init) is so widely used across the indstury. As an example, you can build the `go-server` Dockerfile, run it, then run `curl` it locally. While processing this request, stop the container with `docker stop` and you'll see the `SIGTERM` handler was called, causing the client request to fail mid-way through.
 
 ![docker-sigterm-1](https://raw.githubusercontent.com/hrmcardle0/k8s-traffic-testing/refs/heads/main/images/docker-sigterm-logs.png)
 
-## Kubernetes
+### Kubernetes
 
-Kubernetes operates in the same way.
+Kubernetes operates in the same way. There is a good write-up about this behavior [here](https://learnk8s.io/graceful-shutdown). 
 
+## Endpoints
 
-## Test cases
+K8s service use endpoints to target the backend pods. Services themselves have an IP assigned but it's important to remember that these IPs are not actual resources, they are not routable nor do they represent an actual network interface, either physical or virtual. Instead they are simply placeholders that get put into ip tables rules to route traffic to the correct pods.
 
-1. Pod is deleted
+Upon pod termination, the endpoint should be removed from the service as fast as possible. 
 
-2. Pod terminates internally
+## Results
 
-3. Pod is evicted
+### Services
+
+For services, the removal happens nearly instantly. The following example shows the deletion of a pod and the subsequent removal of the endpoint from the service.
+
+```
+15:23:54.752 - Deleting pod...
+```
+
+```
+Pod endpoint removed at: 15:23:54.952
+```
+
+Interestingly, creating a failed liveness probe on the pod does not remove the endpoint until it fails a certain number of times. During testing, the probe failed, the container restarted, and the endpoint was still present until the probe failed again.
+
+However, with a readiness probe, the endpoint is never registered at all until the probe passes.
+
+Another interesting tidbit, `preStop` hooks cause the endpoint to be removed immidately and the service to stop forwarding traffic immediately. This should be desired behavior, as the point of the `preStop` hook is to allow the pod to finish processing any requests before being terminated.
